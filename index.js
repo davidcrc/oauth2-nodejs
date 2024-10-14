@@ -2,8 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const app = express();
+app.use(cors()); // Enable CORS
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -41,7 +43,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-app.post('/oauth2/default/v1/token', (req, res) => {
+app.post('/oauth2/default/v1/token', (req, res, next) => {
   const { grant_type, client_id, client_secret, scope } = req.body;
 
   console.log('Token request received:', { grant_type, client_id, scope }); // Debug log
@@ -75,8 +77,7 @@ app.post('/oauth2/default/v1/token', (req, res) => {
   });
 });
 
-// New endpoint to simulate stream collections data
-app.get('/stream/collections', verifyToken, (req, res) => {
+app.get('/stream/collections', verifyToken, (req, res, next) => {
   // Simulated data - replace with actual data retrieval logic
   const collections = [
     { id: 1, name: 'Collection 1' },
@@ -88,6 +89,12 @@ app.get('/stream/collections', verifyToken, (req, res) => {
     collections: collections,
     client: req.decodedToken.client_id
   });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err); // Log error
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 4000;
