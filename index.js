@@ -5,7 +5,15 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
-app.use(cors()); // Enable CORS
+
+// CORS configuration
+const corsOptions = {
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST'], // Allow only GET and POST requests
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -43,7 +51,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-app.post('/oauth2/default/v1/token', (req, res, next) => {
+app.post('/oauth2/default/v1/token', (req, res) => {
   const { grant_type, client_id, client_secret, scope } = req.body;
 
   console.log('Token request received:', { grant_type, client_id, scope }); // Debug log
@@ -77,7 +85,8 @@ app.post('/oauth2/default/v1/token', (req, res, next) => {
   });
 });
 
-app.get('/stream/collections', verifyToken, (req, res, next) => {
+// New endpoint to simulate stream collections data
+app.get('/stream/collections', verifyToken, (req, res) => {
   // Simulated data - replace with actual data retrieval logic
   const collections = [
     { id: 1, name: 'Collection 1' },
@@ -91,10 +100,21 @@ app.get('/stream/collections', verifyToken, (req, res, next) => {
   });
 });
 
-// Global error handler
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err); // Log error
-  res.status(500).json({ error: 'Internal Server Error' });
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message
+  });
+});
+
+// 404 handler
+app.use((req, res, next) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: 'The requested resource was not found on this server.'
+  });
 });
 
 const PORT = process.env.PORT || 4000;
